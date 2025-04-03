@@ -2,6 +2,9 @@ package com.example.focuslink.view.login.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.focuslink.core.data.SessionManager
+import com.example.focuslink.view.login.data.model.LoginRequest
+import com.example.focuslink.view.login.data.model.LoginResponse
 import com.example.focuslink.view.login.domain.LoginUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,9 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class LoginViewModel(
-    private val loginUseCase: LoginUseCase = LoginUseCase()
-) : ViewModel() {
+class LoginViewModel() : ViewModel() {
+    private val LoginUseCase  = LoginUseCase()
 
     private val _uiState = MutableStateFlow(LoginUIState())
     val uiState: StateFlow<LoginUIState> = _uiState.asStateFlow()
@@ -41,12 +43,22 @@ class LoginViewModel(
 
             // En implementación real, usaríamos loginUseCase.execute()
             // Simulamos respuesta exitosa para propósitos de UI
-            _uiState.update {
-                it.copy(
-                    isLoggedIn = true,
-                    isLoading = false
-                )
+            val result = LoginUseCase.execute(LoginRequest(_uiState.value.email, _uiState.value.password))
+            result
+                .onSuccess { response: LoginResponse ->
+                // ✅ Guardar token o usuario en SessionManager
+                SessionManager.saveToken(response.token) // Asegúrate que exista
+                SessionManager.saveUserId(response.user.id) // Si quieres guardar también el ID
+                _uiState.update {
+                    it.copy(isLoggedIn = true, isLoading = false)
+                }
             }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(errorMessage = error.message ?: "Error desconocido", isLoading = false)
+                    }
+                }
+
         }
     }
 }

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
 import com.example.focuslink.core.data.SessionManager
+import com.example.focuslink.core.data.local.AppContainer
 import com.example.focuslink.core.theme.ThemeManager
 import com.example.focuslink.utils.save_token.data.model.TokenDTO
 import com.example.focuslink.utils.save_token.domain.SaveTokenUseCase
@@ -16,6 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MyApp : Application() {
+    lateinit var container: AppContainer
+
     companion object {
         const val NOTIFICATION_CHANNEL_ID = "notification_fcm"
     }
@@ -23,6 +26,8 @@ class MyApp : Application() {
     override fun onCreate() {
         val saveToken = SaveTokenUseCase()
         super.onCreate()
+        container = AppContainer(this)
+
         ThemeManager.init(this)
 
         println("App creada")
@@ -39,13 +44,12 @@ class MyApp : Application() {
             val token = it.result
             SessionManager.saveFCMToken(token)
             val userId = SessionManager.getUserId()
-            if (userId > 0) {
-                val bodytoken:TokenDTO = TokenDTO(SessionManager.getUserId(),token)
+            if (!userId.isNullOrEmpty()) {
+                val bodytoken:TokenDTO = TokenDTO(SessionManager.getUserId()!!,token)
                 CoroutineScope(Dispatchers.IO).launch {
                     saveToken.saveToken(bodytoken)
                 }
             }
-
 
             println("El valor del token es")
             println(token)

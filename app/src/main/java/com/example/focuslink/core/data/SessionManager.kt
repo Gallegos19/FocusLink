@@ -27,13 +27,13 @@ object SessionManager {
     }
 
     // Guardar ID del usuario
-    fun saveUserId(userId: Int) {
-        sharedPreferences.edit().putInt(USER_ID_KEY, userId).apply()
+    fun saveUserId(userId: String) {
+        sharedPreferences.edit().putString(USER_ID_KEY, userId).apply()
     }
 
     // Obtener ID del usuario
-    fun getUserId(): Int {
-        return sharedPreferences.getInt(USER_ID_KEY, -1) // Retorna -1 si no existe
+    fun getUserId(): String? {
+        return sharedPreferences.getString(USER_ID_KEY, null)
     }
 
     // Borrar sesión completa (Token + ID + FCM)

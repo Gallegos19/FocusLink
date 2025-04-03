@@ -27,6 +27,12 @@ fun LoginScreen(
 ) {
     val uiState by loginViewModel.uiState.collectAsState()
 
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
+            navigateToHome()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()

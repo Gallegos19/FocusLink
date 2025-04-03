@@ -13,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object RetrofitHelper {
-    private const val BASE_URL = "https://api.focuslink.com/api/"
+    private const val BASE_URL = "http://3.230.93.158:3000/"
 
     val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
