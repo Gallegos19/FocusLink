@@ -2,11 +2,14 @@ package com.example.focuslink.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// Colores principales de la aplicación
 val PinkPrimary = Color(0xFFEE6380)
 val PinkLight = Color(0xFFFFDADE)
 val DarkGrey = Color(0xFF333333)
 val LightGrey = Color(0xFFEEEEEE)
+val PurpleNavBar = Color(0xFF6C63FF) // Añadido para la barra de navegación en modo oscuro
 
+// Tema claro
 val md_theme_light_primary = PinkPrimary
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
 val md_theme_light_primaryContainer = PinkLight
@@ -38,6 +41,7 @@ val md_theme_light_surfaceTint = Color(0xFFBF0043)
 val md_theme_light_outlineVariant = Color(0xFFD7C1C1)
 val md_theme_light_scrim = Color(0xFF000000)
 
+// Tema oscuro
 val md_theme_dark_primary = Color(0xFFFFB1C2)
 val md_theme_dark_onPrimary = Color(0xFF5F1125)
 val md_theme_dark_primaryContainer = Color(0xFF7F2A3B)

@@ -1,5 +1,6 @@
 package com.example.focuslink.core.network
 
+import com.example.focuslink.utils.save_token.data.datasource.SaveTokenService
 import com.example.focuslink.view.login.data.datasource.LoginService
 import com.example.focuslink.view.register.data.datasource.RegisterService
 import com.example.focuslink.view.timer.data.datasource.SessionService
@@ -43,6 +44,9 @@ object RetrofitHelper {
 
     fun getStatsService(): StatsService {
         return retrofit.create(StatsService::class.java)
+    }
+    fun getRetrofitToken() : SaveTokenService{
+        return retrofit.create(SaveTokenService::class.java)
     }
 
     fun getPreferencesService(): PreferencesService {
