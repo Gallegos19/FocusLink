@@ -1,31 +1,45 @@
 package com.example.focuslink.view.register.presentation
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.focuslink.R
 import com.example.focuslink.ui.theme.PinkPrimary
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun RegisterScreen(
     registerViewModel: RegisterViewModel,
     navigateToLogin: () -> Unit
 ) {
     val uiState by registerViewModel.uiState.collectAsState()
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
+
+    LaunchedEffect(uiState.isRegistered) {
+        if (uiState.isRegistered) {
+            navigateToLogin()
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,7 +72,20 @@ fun RegisterScreen(
         )
 
         Spacer(modifier = Modifier.height(32.dp))
+        // Mostrar mensaje de error si hay alguno
+        if (uiState.errorMessage.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = uiState.errorMessage,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
+        // Mostrar indicador de carga
+        if (uiState.isLoading) {
+            Spacer(modifier = Modifier.height(16.dp))
+            CircularProgressIndicator(color = PinkPrimary)
+        }
         // Nombre de usuario
         OutlinedTextField(
             value = uiState.username,
@@ -70,6 +97,27 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        OutlinedTextField(
+            value = uiState.lastname,
+            onValueChange = { registerViewModel.updateLastname(it) },
+            label = { Text("Apellido de usuario") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+
+        OutlinedTextField(
+            value = uiState.age.toString(),
+            onValueChange = { registerViewModel.updateAge((it.toIntOrNull() ?: 0).toString()) },
+            label = { Text("Edad de usuario") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+
+        Spacer(modifier = Modifier.height(16.dp))
         // Email
         OutlinedTextField(
             value = uiState.email,
@@ -88,8 +136,14 @@ fun RegisterScreen(
             onValueChange = { registerViewModel.updatePassword(it) },
             label = { Text("Contraseña") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val icon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = icon, contentDescription = "Mostrar/Ocultar")
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -101,8 +155,14 @@ fun RegisterScreen(
             onValueChange = { registerViewModel.updateConfirmPassword(it) },
             label = { Text("Confirmar contraseña") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val icon = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                    Icon(imageVector = icon, contentDescription = "Mostrar/Ocultar")
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -129,19 +189,6 @@ fun RegisterScreen(
             Text("¿Ya tienes una cuenta? Inicia sesión", color = PinkPrimary)
         }
 
-        // Mostrar mensaje de error si hay alguno
-        if (uiState.errorMessage.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = uiState.errorMessage,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
 
-        // Mostrar indicador de carga
-        if (uiState.isLoading) {
-            Spacer(modifier = Modifier.height(16.dp))
-            CircularProgressIndicator(color = PinkPrimary)
-        }
     }
 }

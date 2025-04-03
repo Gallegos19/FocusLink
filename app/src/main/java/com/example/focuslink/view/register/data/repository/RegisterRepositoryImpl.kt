@@ -6,20 +6,18 @@ import com.example.focuslink.view.register.data.model.RegisterRequest
 import com.example.focuslink.view.register.data.model.RegisterResponse
 import com.example.focuslink.view.register.domain.RegisterRepository
 
-class RegisterRepositoryImpl(
-    private val registerService: RegisterService = RetrofitHelper.getRegisterService()
-) : RegisterRepository {
+class RegisterRepositoryImpl() {
+    private val registerService = RetrofitHelper.getRegisterService()
 
-    override suspend fun register(username: String, email: String, password: String): Result<RegisterResponse> {
+    suspend fun register(user: RegisterRequest): Result<RegisterResponse> {
         return try {
-            val response = registerService.register(
-                RegisterRequest(
-                    username = username,
-                    email = email,
-                    password = password
-                )
-            )
-            Result.success(response)
+            val response = registerService.register(user)
+            if (response.isSuccessful){
+                Result.success(response.body()!!)
+            }else{
+                Result.failure(Exception(response.errorBody()?.string()))
+            }
+
         } catch (e: Exception) {
             Result.failure(e)
         }

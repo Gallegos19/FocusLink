@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TokenDTO(
-    private val id: Int,
+    private val id: String,
     private val token: String
 )

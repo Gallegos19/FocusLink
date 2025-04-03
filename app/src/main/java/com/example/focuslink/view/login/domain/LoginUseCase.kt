@@ -1,26 +1,27 @@
 package com.example.focuslink.view.login.domain
 
+import com.example.focuslink.view.login.data.model.LoginRequest
 import com.example.focuslink.view.login.data.model.LoginResponse
 import com.example.focuslink.view.login.data.repository.LoginRepositoryImpl
 
-class LoginUseCase(
-    private val loginRepository: LoginRepository = LoginRepositoryImpl()
-) {
-    suspend fun execute(email: String, password: String): Result<LoginResponse> {
+class LoginUseCase( ){
+    private val repository = LoginRepositoryImpl()
+
+    suspend fun execute(User: LoginRequest): Result<LoginResponse> {
         // Validación básica
-        if (email.isBlank()) {
+        if (User.email.isBlank()) {
             return Result.failure(IllegalArgumentException("El email no puede estar vacío"))
         }
 
-        if (!isValidEmail(email)) {
+        if (!isValidEmail(User.email)) {
             return Result.failure(IllegalArgumentException("El email no tiene un formato válido"))
         }
 
-        if (password.isBlank()) {
+        if (User.password.isBlank()) {
             return Result.failure(IllegalArgumentException("La contraseña no puede estar vacía"))
         }
 
-        return loginRepository.login(email, password)
+        return repository.LoginUser(User)
     }
 
     private fun isValidEmail(email: String): Boolean {
