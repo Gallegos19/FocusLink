@@ -10,6 +10,7 @@ object Constants {
     const val DEFAULT_LONG_BREAK_MINUTES = 15
     const val DEFAULT_CYCLES_BEFORE_LONG_BREAK = 4
 
+
     // API endpoints
     const val LOGIN_ENDPOINT = "auth/login"
     const val REGISTER_ENDPOINT = "auth/register"

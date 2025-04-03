@@ -1,8 +1,11 @@
 package com.example.focuslink.view.settings.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.focuslink.core.theme.ThemeManager
 import com.example.focuslink.view.settings.domain.PreferencesUseCase
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +21,12 @@ class SettingsViewModel(
 
     init {
         loadPreferences()
+        // Sincronizar el estado inicial desde ThemeManager
+        viewModelScope.launch {
+            ThemeManager.isDarkTheme.collect { isDarkTheme ->
+                _uiState.update { it.copy(darkModeEnabled = isDarkTheme) }
+            }
+        }
     }
 
     private fun loadPreferences() {
@@ -39,7 +48,7 @@ class SettingsViewModel(
                                 notificationsEnabled = prefs.notificationsEnabled,
                                 soundEnabled = prefs.soundEnabled,
                                 vibrateEnabled = prefs.vibrateEnabled,
-                                darkModeEnabled = prefs.darkModeEnabled,
+                                // No actualizamos darkModeEnabled aquí, lo obtenemos del ThemeManager
                                 isLoading = false
                             )
                         }
@@ -64,6 +73,19 @@ class SettingsViewModel(
         }
     }
 
+    fun solicitarTokenFCM() {
+        FirebaseMessaging.getInstance().token
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    Log.d("FCM", "Token FCM obtenido: $token")
+                    // Aquí puedes guardar el token localmente o mandarlo a tu servidor
+                } else {
+                    Log.e("FCM", "Error al obtener token FCM", task.exception)
+                }
+            }
+    }
+
     fun updateFocusTime(minutes: Int) {
         _uiState.update { it.copy(focusTimeMinutes = minutes) }
         savePreferences()
@@ -75,7 +97,13 @@ class SettingsViewModel(
     }
 
     fun toggleNotifications(enabled: Boolean) {
-        _uiState.update { it.copy(notificationsEnabled = enabled) }
+        _uiState.update {
+            it.copy(
+                notificationsEnabled = enabled,
+                soundEnabled = if (!enabled) false else it.soundEnabled,
+                vibrateEnabled = if (!enabled) false else it.vibrateEnabled
+            )
+        }
         savePreferences()
     }
 
@@ -90,7 +118,11 @@ class SettingsViewModel(
     }
 
     fun toggleDarkMode(enabled: Boolean) {
-        _uiState.update { it.copy(darkModeEnabled = enabled) }
+        // Solo actualizamos el ThemeManager
+        ThemeManager.setDarkTheme(enabled)
+
+        // El estado local se actualizará automáticamente a través de la recolección
+        // Los valores para guardar en preferencias también vendrán del ThemeManager
         savePreferences()
     }
 
@@ -103,7 +135,7 @@ class SettingsViewModel(
                     notificationsEnabled = _uiState.value.notificationsEnabled,
                     soundEnabled = _uiState.value.soundEnabled,
                     vibrateEnabled = _uiState.value.vibrateEnabled,
-                    darkModeEnabled = _uiState.value.darkModeEnabled
+                    darkModeEnabled = ThemeManager.isDarkTheme.value // Usar el valor del ThemeManager
                 )
 
                 if (result.isFailure) {

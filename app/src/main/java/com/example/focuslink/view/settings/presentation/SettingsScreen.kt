@@ -1,5 +1,10 @@
 package com.example.focuslink.view.settings.presentation
 
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,9 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.focuslink.components.BottomNavigationBar
+import com.example.focuslink.core.navigation.Screen
 import com.example.focuslink.ui.theme.PinkPrimary
+import com.example.focuslink.utils.PermissionRequester
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,10 +28,31 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     navigateToTimer: () -> Unit,
     navigateToStats: () -> Unit,
-    navigateToNotifications: () -> Unit
+    navigateToNotifications: () -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     val uiState by settingsViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
+    val notiPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(context, "Permiso de notificaciones concedido", Toast.LENGTH_SHORT).show()
+            settingsViewModel.solicitarTokenFCM()
+        } else {
+            Toast.makeText(context, "Permiso de notificaciones denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val vibratePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(context, "Permiso de vibración concedido", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Permiso de vibración denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -114,23 +144,14 @@ fun SettingsScreen(
                     SwitchRow(
                         label = "Activar notificaciones",
                         checked = uiState.notificationsEnabled,
-                        onCheckedChange = settingsViewModel::toggleNotifications
-                    )
+                        onCheckedChange = {
+                            settingsViewModel.toggleNotifications(it)
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    SwitchRow(
-                        label = "Sonido",
-                        checked = uiState.soundEnabled,
-                        enabled = uiState.notificationsEnabled,
-                        onCheckedChange = settingsViewModel::toggleSound
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    SwitchRow(
-                        label = "Vibración",
-                        checked = uiState.vibrateEnabled,
-                        enabled = uiState.notificationsEnabled,
-                        onCheckedChange = settingsViewModel::toggleVibrate
+                            if (it) {
+                                // Solo pedimos permiso si las activan
+                                PermissionRequester.pedirPermisos(context, Manifest.permission.POST_NOTIFICATIONS, notiPermissionLauncher)
+                            }
+                        }
                     )
                 }
             }
@@ -168,32 +189,15 @@ fun SettingsScreen(
         }
 
         // Navegación inferior
-        NavigationBar {
-            NavigationBarItem(
-                selected = false,
-                onClick = navigateToTimer,
-                icon = { Icon(Icons.Default.Timer, contentDescription = "Timer") },
-                label = { Text("Temporizador") }
-            )
-            NavigationBarItem(
-                selected = false,
-                onClick = navigateToStats,
-                icon = { Icon(Icons.Default.BarChart, contentDescription = "Estadísticas") },
-                label = { Text("Estadísticas") }
-            )
-            NavigationBarItem(
-                selected = false,
-                onClick = navigateToNotifications,
-                icon = { Icon(Icons.Default.Notifications, contentDescription = "Notificaciones") },
-                label = { Text("Notificaciones") }
-            )
-            NavigationBarItem(
-                selected = true,
-                onClick = { /* Ya estás aquí */ },
-                icon = { Icon(Icons.Default.Settings, contentDescription = "Configuración") },
-                label = { Text("Configuración") }
-            )
-        }
+        BottomNavigationBar(
+            currentRoute = Screen.Settings.route,
+            onNavigateToTimer = navigateToTimer,
+            onNavigateToStats = navigateToStats,
+            onNavigateToNotifications = navigateToNotifications,
+            onNavigateToSettings = { /* Ya estás aquí */ },
+            modifier = Modifier.fillMaxWidth(),
+            isDarkTheme = isDarkTheme
+        )
     }
 }
 

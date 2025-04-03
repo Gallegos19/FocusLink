@@ -81,6 +81,7 @@ fun FocusLinkTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    // Usamos explícitamente darkTheme pasado como parámetro, no isSystemInDarkTheme()
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -94,6 +95,7 @@ fun FocusLinkTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
+            // Usamos el color primario para la barra de estado
             window.statusBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
@@ -101,7 +103,7 @@ fun FocusLinkTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // Asegúrate de tener un archivo Typography.kt con esto
+        typography = Typography,
         content = content
     )
 }

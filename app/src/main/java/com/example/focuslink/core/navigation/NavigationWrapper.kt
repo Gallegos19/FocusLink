@@ -20,7 +20,11 @@ import com.example.focuslink.view.settings.presentation.SettingsScreen
 import com.example.focuslink.view.settings.presentation.SettingsViewModel
 
 @Composable
-fun NavigationWrapper(modifier: Modifier = Modifier, ctx: Context) {
+fun NavigationWrapper(
+    modifier: Modifier = Modifier,
+    ctx: Context,
+    isDarkTheme: Boolean = false
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.Login.route) {
@@ -44,7 +48,8 @@ fun NavigationWrapper(modifier: Modifier = Modifier, ctx: Context) {
                 timerViewModel = TimerViewModel(),
                 navigateToStats = { navController.navigate(Screen.Stats.route) },
                 navigateToNotifications = { navController.navigate(Screen.Notifications.route) },
-                navigateToSettings = { navController.navigate(Screen.Settings.route) }
+                navigateToSettings = { navController.navigate(Screen.Settings.route) },
+                isDarkTheme = isDarkTheme
             )
         }
 
@@ -53,7 +58,8 @@ fun NavigationWrapper(modifier: Modifier = Modifier, ctx: Context) {
                 statsViewModel = StatsViewModel(),
                 navigateToTimer = { navController.navigate(Screen.Timer.route) },
                 navigateToNotifications = { navController.navigate(Screen.Notifications.route) },
-                navigateToSettings = { navController.navigate(Screen.Settings.route) }
+                navigateToSettings = { navController.navigate(Screen.Settings.route) },
+                isDarkTheme = isDarkTheme
             )
         }
 
@@ -62,7 +68,8 @@ fun NavigationWrapper(modifier: Modifier = Modifier, ctx: Context) {
                 notificationsViewModel = NotificationsViewModel(),
                 navigateToTimer = { navController.navigate(Screen.Timer.route) },
                 navigateToStats = { navController.navigate(Screen.Stats.route) },
-                navigateToSettings = { navController.navigate(Screen.Settings.route) }
+                navigateToSettings = { navController.navigate(Screen.Settings.route) },
+                isDarkTheme = isDarkTheme
             )
         }
 
@@ -71,9 +78,9 @@ fun NavigationWrapper(modifier: Modifier = Modifier, ctx: Context) {
                 settingsViewModel = SettingsViewModel(),
                 navigateToTimer = { navController.navigate(Screen.Timer.route) },
                 navigateToStats = { navController.navigate(Screen.Stats.route) },
-                navigateToNotifications = { navController.navigate(Screen.Notifications.route) }
+                navigateToNotifications = { navController.navigate(Screen.Notifications.route) },
+                isDarkTheme = isDarkTheme
             )
         }
     }
 }
-

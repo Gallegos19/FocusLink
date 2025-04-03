@@ -1,6 +1,7 @@
 package com.example.focuslink.view.notifications.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.focuslink.components.BottomNavigationBar
+import com.example.focuslink.core.navigation.Screen
 import com.example.focuslink.ui.theme.PinkPrimary
 
 @Composable
@@ -21,7 +24,8 @@ fun NotificationsScreen(
     notificationsViewModel: NotificationsViewModel,
     navigateToTimer: () -> Unit,
     navigateToStats: () -> Unit,
-    navigateToSettings: () -> Unit
+    navigateToSettings: () -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     val uiState by notificationsViewModel.uiState.collectAsState()
 
@@ -159,31 +163,14 @@ fun NotificationsScreen(
             }
         }
 
-        NavigationBar {
-            NavigationBarItem(
-                selected = false,
-                onClick = navigateToTimer,
-                icon = { Icon(Icons.Default.Timer, contentDescription = "Temporizador") },
-                label = { Text("Temporizador") }
-            )
-            NavigationBarItem(
-                selected = false,
-                onClick = navigateToStats,
-                icon = { Icon(Icons.Default.BarChart, contentDescription = "Estadísticas") },
-                label = { Text("Estadísticas") }
-            )
-            NavigationBarItem(
-                selected = true,
-                onClick = { },
-                icon = { Icon(Icons.Default.Notifications, contentDescription = "Notificaciones") },
-                label = { Text("Notificaciones") }
-            )
-            NavigationBarItem(
-                selected = false,
-                onClick = navigateToSettings,
-                icon = { Icon(Icons.Default.Settings, contentDescription = "Configuración") },
-                label = { Text("Configuración") }
-            )
-        }
+        BottomNavigationBar(
+            currentRoute = Screen.Notifications.route,
+            onNavigateToTimer = navigateToTimer,
+            onNavigateToStats = navigateToStats,
+            onNavigateToNotifications = { /* Ya estás aquí */ },
+            onNavigateToSettings = navigateToSettings,
+            modifier = Modifier.fillMaxWidth(),
+            isDarkTheme = isDarkTheme
+        )
     }
 }

@@ -20,9 +20,9 @@ class PreferencesRepositoryImpl(
                     email = "usuario@example.com",
                     focusTimeMinutes = 25,
                     breakTimeMinutes = 5,
-                    notificationsEnabled = true,
-                    soundEnabled = true,
-                    vibrateEnabled = true,
+                    notificationsEnabled = false,
+                    soundEnabled = false,
+                    vibrateEnabled = false,
                     darkModeEnabled = false
                 )
                 Result.success(mockPreferences)
