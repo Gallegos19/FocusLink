@@ -4,36 +4,30 @@ import com.example.focuslink.core.network.RetrofitHelper
 import com.example.focuslink.view.timer.data.datasource.SessionService
 import com.example.focuslink.view.timer.data.model.SessionDto
 import com.example.focuslink.view.timer.data.model.SessionRequest
+import com.example.focuslink.view.timer.data.model.SessionResponse
 import com.example.focuslink.view.timer.domain.SessionRepository
 import java.util.Date
 
-class SessionRepositoryImpl(
-    private val sessionService: SessionService = RetrofitHelper.getSessionService()
-) : SessionRepository {
+class SessionRepositoryImpl {
+    private val sessionService = RetrofitHelper.getSessionService()
 
-    override suspend fun startSession(
-        token: String,
-        userId: String,
-        startTime: Date,
-        focusTimeMinutes: Int,
-        breakTimeMinutes: Int
-    ): Result<SessionDto> {
+    suspend fun startSession(token:String,session: SessionRequest): Result<SessionResponse> {
         return try {
-            val request = SessionRequest(
-                userId = userId,
-                startTime = startTime,
-                focusTimeMinutes = focusTimeMinutes,
-                breakTimeMinutes = breakTimeMinutes
-            )
 
-            val response = sessionService.startSession("Bearer $token", request)
-            Result.success(response)
+            val response = sessionService.startSession("Bearer $token", session)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                }?:Result.failure(Exception("Respuesta erronea por parte del servidor"))
+            }else{
+                Result.failure(Exception(response.errorBody()?.string()))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun updateSession(
+    suspend fun updateSession(
         token: String,
         sessionId: String,
         sessionDto: SessionDto
@@ -46,7 +40,7 @@ class SessionRepositoryImpl(
         }
     }
 
-    override suspend fun getUserSessions(
+    suspend fun getUserSessions(
         token: String,
         userId: String
     ): Result<List<SessionDto>> {

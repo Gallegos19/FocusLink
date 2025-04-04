@@ -6,5 +6,5 @@ data class TimerUIState(
     val isBreakTime: Boolean = false,
     val currentCycle: Int = 1,
     val progress: Float = 1f,
-    val timeLeftFormatted: String = "25:00"
+    val timeLeftFormatted: String = "00:10"
 )

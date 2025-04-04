@@ -1,69 +1,72 @@
 package com.example.focuslink.view.settings.data.repository
 
 import android.content.Context
+import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import com.example.focuslink.core.network.RetrofitHelper
 import com.example.focuslink.view.settings.data.datasource.PreferencesService
+import com.example.focuslink.view.settings.data.datasource.PreferencesServices
 import com.example.focuslink.view.settings.data.model.PreferencesDto
+import com.example.focuslink.view.settings.data.model.PreferencesRequest
+import com.example.focuslink.view.settings.data.model.PreferencesResponse
+import com.example.focuslink.view.settings.data.model.UserResponse
 import com.example.focuslink.view.settings.domain.PreferencesRepository
 
-class PreferencesRepositoryImpl(
-    private val context: Context? = null,
-    private val preferencesService: PreferencesService? = null
-) : PreferencesRepository {
+class PreferencesRepositoryImpl{
+    private val context: Context? = null
+    private val preferencesService = RetrofitHelper.getPreferencesService()
 
-    override fun getPreferences(): Result<PreferencesDto> {
+    suspend fun getPreferences(token:String): Result<PreferencesResponse> {
         return try {
-            if (context == null && preferencesService == null) {
-                // Mock para demo UI
-                val mockPreferences = PreferencesDto(
-                    userId = "mock-user-id",
-                    username = "Usuario",
-                    email = "usuario@example.com",
-                    focusTimeMinutes = 25,
-                    breakTimeMinutes = 5,
-                    notificationsEnabled = false,
-                    soundEnabled = false,
-                    vibrateEnabled = false,
-                    darkModeEnabled = false
-                )
-                Result.success(mockPreferences)
+            val response = preferencesService.getPreferences(token)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía por parte del servidor"))
+                }
             } else {
-                // Usar implementación real
-                val service = preferencesService ?: PreferencesService(context!!)
-                Result.success(service.getPreferences())
+                val errorMsg = response.errorBody()?.string() ?: "Error desconocido del servidor"
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override fun savePreferences(preferences: PreferencesDto): Result<Unit> {
+    suspend fun savePreferences(token: String, preference: PreferencesRequest): Result<PreferencesResponse> {
         return try {
-            if (context == null && preferencesService == null) {
-                // Mock para demo UI
-                Result.success(Unit)
-            } else {
-                // Usar implementación real
-                val service = preferencesService ?: PreferencesService(context!!)
-                service.savePreferences(preferences)
-                Result.success(Unit)
+            val response = preferencesService.savePreferences(token, preference)
+            if(response.isSuccessful){
+                response.body()?.let {
+                    Result.success(it)
+                }?: Result.failure(Exception("Respuesta vacia por parte del servidor"))
+            }else{
+                Result.failure(Exception(response.errorBody()?.string()))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override fun clearUserData(): Result<Unit> {
+    suspend fun getUserById(token: String): Result<UserResponse> {
         return try {
-            if (context == null && preferencesService == null) {
-                // Mock para demo UI
-                Result.success(Unit)
+            val response = preferencesService.getUserById(token)
+            if (response.isSuccessful) {
+                val body = response.body()
+                Log.d("PreferencesRepository", "User response: $body")
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Respuesta vacía por parte del servidor"))
+                }
             } else {
-                // Usar implementación real
-                val service = preferencesService ?: PreferencesService(context!!)
-                service.clearUserData()
-                Result.success(Unit)
+                val errorMsg = response.errorBody()?.string() ?: "Error desconocido del servidor"
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
+            Log.e("PreferencesRepository", "Error getting user", e)
             Result.failure(e)
         }
     }

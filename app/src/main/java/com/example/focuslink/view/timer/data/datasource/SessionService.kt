@@ -3,14 +3,16 @@ package com.example.focuslink.view.timer.data.datasource
 import com.example.focuslink.core.utils.Constants
 import com.example.focuslink.view.timer.data.model.SessionDto
 import com.example.focuslink.view.timer.data.model.SessionRequest
+import com.example.focuslink.view.timer.data.model.SessionResponse
+import retrofit2.Response
 import retrofit2.http.*
 
 interface SessionService {
-    @POST(Constants.SESSIONS_ENDPOINT)
+    @POST("sessions")
     suspend fun startSession(
         @Header("Authorization") token: String,
         @Body sessionRequest: SessionRequest
-    ): SessionDto
+    ): Response<SessionResponse>
 
     @PUT("${Constants.SESSIONS_ENDPOINT}/{sessionId}")
     suspend fun updateSession(

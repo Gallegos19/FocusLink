@@ -7,7 +7,6 @@ import com.example.focuslink.view.timer.data.model.SessionDto
 import java.util.Date
 
 class StopTimerUseCase(
-    private val timerUseCase: TimerUseCase = TimerUseCase(),
     private val context: Context? = null
 ) {
 
