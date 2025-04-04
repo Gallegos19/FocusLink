@@ -55,7 +55,6 @@ fun NavigationWrapper(
 
         composable(Screen.Timer.route) {
             TimerScreen(
-                timerViewModel = TimerViewModel(),
                 navigateToStats = { navController.navigate(Screen.Stats.route) },
                 navigateToNotifications = { navController.navigate(Screen.Notifications.route) },
                 navigateToSettings = { navController.navigate(Screen.Settings.route) },

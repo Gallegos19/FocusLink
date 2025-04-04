@@ -119,7 +119,7 @@ fun SettingsScreen(
                     Text("Tiempo de enfoque", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        listOf(15, 25, 30, 45).forEach { minutes ->
+                        listOf(1, 25, 30, 45).forEach { minutes ->
                             FilterChip(
                                 selected = uiState.focusTimeMinutes == minutes,
                                 onClick = { settingsViewModel.updateFocusTime(minutes) },
@@ -136,7 +136,7 @@ fun SettingsScreen(
                     Text("Tiempo de descanso", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        listOf(5, 10, 15, 20).forEach { minutes ->
+                        listOf(1, 10, 15, 20).forEach { minutes ->
                             FilterChip(
                                 selected = uiState.breakTimeMinutes == minutes,
                                 onClick = { settingsViewModel.updateBreakTime(minutes) },
