@@ -3,6 +3,8 @@ package com.example.focuslink.view.stats.presentation
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -39,67 +41,6 @@ fun StatsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(120.dp)
-                    .padding(end = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(Icons.Default.BarChart, contentDescription = null, tint = PinkPrimary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = uiState.totalCycles.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(text = "Ciclos", style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(120.dp)
-                    .padding(start = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(Icons.Default.AccessTime, contentDescription = null, tint = PinkPrimary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "${uiState.totalHours}h ${uiState.totalMinutes}m",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(text = "Tiempo total", style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Estadísticas diarias",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier
@@ -110,47 +51,80 @@ fun StatsScreen(
                 CircularProgressIndicator(color = PinkPrimary)
             }
         } else {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .verticalScroll(rememberScrollState())
             ) {
-                items(uiState.dailyStats.size) { index ->
-                    val dailyStat = uiState.dailyStats[index]
-                    Row(
+                // Primera fila: Ciclos y Tiempo total
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Ciclos totales
+                    StatCard(
+                        icon = Icons.Default.BarChart,
+                        value = uiState.totalCycles.toString(),
+                        label = "Ciclos",
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.CalendarMonth,
-                            contentDescription = null,
-                            tint = PinkPrimary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = dailyStat.date,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "${dailyStat.focusTime} • ${dailyStat.cycles} ciclos",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
 
-                    if (index < uiState.dailyStats.size - 1) {
-                        Divider(
-                            modifier = Modifier.padding(start = 48.dp, top = 8.dp, bottom = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
+                    // Tiempo total
+                    StatCard(
+                        icon = Icons.Default.AccessTime,
+                        value = "${uiState.totalHours}h ${uiState.totalMinutes}m",
+                        label = "Tiempo total",
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp),
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Segunda fila: Descansos cortos y Descansos largos
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Descansos cortos
+                    StatCard(
+                        icon = Icons.Default.Coffee,
+                        value = uiState.breakCount.toString(),
+                        label = "Descansos cortos",
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+
+                    // Descansos largos
+                    StatCard(
+                        icon = Icons.Default.HotelClass,
+                        value = uiState.longBreakCount.toString(),
+                        label = "Descansos largos",
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Interrupciones
+                StatCard(
+                    icon = Icons.Default.NotificationsActive,
+                    value = uiState.totalInterruptions.toString(),
+                    label = "Interrupciones",
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
             }
         }
 
@@ -163,5 +137,34 @@ fun StatsScreen(
             modifier = Modifier.fillMaxWidth(),
             isDarkTheme = isDarkTheme
         )
+    }
+}
+
+@Composable
+fun StatCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primaryContainer
+) {
+    Card(
+        modifier = modifier.height(120.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, contentDescription = null, tint = PinkPrimary)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
