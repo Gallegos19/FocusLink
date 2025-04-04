@@ -28,11 +28,27 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     navigateToTimer: () -> Unit,
     navigateToStats: () -> Unit,
+    navigateToLogin: () -> Unit,
     navigateToNotifications: () -> Unit,
     isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     val uiState by settingsViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    LaunchedEffect(uiState) {
+        println("Nuevo estado de configuración: $uiState")
+    }
+    if (uiState.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    }
+
+
+    LaunchedEffect(uiState.logout) {
+        if (uiState.logout){
+            navigateToLogin()
+        }
+    }
 
     val notiPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
