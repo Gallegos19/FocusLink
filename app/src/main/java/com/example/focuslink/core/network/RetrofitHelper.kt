@@ -6,6 +6,7 @@ import com.example.focuslink.view.register.data.datasource.RegisterService
 import com.example.focuslink.view.timer.data.datasource.SessionService
 import com.example.focuslink.view.stats.data.datasource.StatsService
 import com.example.focuslink.view.settings.data.datasource.PreferencesService
+import com.example.focuslink.view.settings.data.datasource.PreferencesServices
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -49,7 +50,7 @@ object RetrofitHelper {
         return retrofit.create(SaveTokenService::class.java)
     }
 
-    fun getPreferencesService(): PreferencesService {
-        return retrofit.create(PreferencesService::class.java)
+    fun getPreferencesService(): PreferencesServices {
+        return retrofit.create(PreferencesServices::class.java)
     }
 }

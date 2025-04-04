@@ -3,6 +3,7 @@ package com.example.focuslink
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.example.focuslink.core.data.SessionManager
@@ -34,6 +35,7 @@ class MyApp : Application() {
 
         // Crear canal de notificaciones - ¡IMPORTANTE!
         createNotificationChannel()
+        createFocusTimerChannel(this)
 
         Firebase.messaging.token.addOnCompleteListener {
             if(!it.isSuccessful){
@@ -69,4 +71,19 @@ class MyApp : Application() {
             notificationManager.createNotificationChannel(channel)
         }
     }
+    private fun createFocusTimerChannel(context: Context){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "focus_timer_channel",
+                "Focus Timer Channel",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Muestra el progreso del tiempo de enfoque"
+            }
+
+            val notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
 }
