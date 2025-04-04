@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.focuslink.components.BottomNavigationBar
 import com.example.focuslink.core.navigation.Screen
 import com.example.focuslink.ui.theme.PinkPrimary
@@ -27,6 +28,29 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun TimerScreen(
+    navigateToStats: () -> Unit,
+    navigateToNotifications: () -> Unit,
+    navigateToSettings: () -> Unit,
+    isDarkTheme: Boolean = isSystemInDarkTheme()
+) {
+    val context = LocalContext.current
+
+    // Crear ViewModel usando nuestro Factory personalizado
+    val timerViewModel: TimerViewModel = viewModel(
+        factory = TimerViewModelFactory(context)
+    )
+
+    TimerScreenContent(
+        timerViewModel = timerViewModel,
+        navigateToStats = navigateToStats,
+        navigateToNotifications = navigateToNotifications,
+        navigateToSettings = navigateToSettings,
+        isDarkTheme = isDarkTheme
+    )
+}
+
+@Composable
+fun TimerScreenContent(
     timerViewModel: TimerViewModel,
     navigateToStats: () -> Unit,
     navigateToNotifications: () -> Unit,
@@ -210,42 +234,6 @@ fun TimerScreen(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        /*
-        // Botones de prueba (solo para desarrollo)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                onClick = {
-                    Log.d("AlarmDebug", "Botón de prueba presionado")
-                    timerViewModel.playAlarmSound(appContext)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.VolumeUp,
-                    contentDescription = "Probar alarma"
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("PROBAR ALARMA")
-            }
-
-            Button(
-                onClick = {
-                    timerViewModel.stopAlarmSound(appContext)
-                    isAlarmButtonVisible = false
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.VolumeOff,
-                    contentDescription = "Detener alarma"
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("DETENER ALARMA")
-            }
-        }*/
 
         Spacer(modifier = Modifier.weight(1f))
 

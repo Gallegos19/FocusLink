@@ -8,7 +8,11 @@ import android.os.Vibrator
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.focuslink.core.data.GlobalStorage
+import com.example.focuslink.core.data.SessionManager
+import com.example.focuslink.core.data.local.preferences.repository.OfflinePreferencesRepository
 import com.example.focuslink.core.services.TimerForegroundService
+import com.example.focuslink.view.timer.data.model.SessionRequest
 import com.example.focuslink.view.timer.domain.AddsSessionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -19,10 +23,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import android.util.Log
+import java.util.Date
 
-class TimerViewModel() : ViewModel() {
-    private val AddSession = AddsSessionUseCase()
-    private val tag = "AlarmDebug"
+class TimerViewModel(
+    private val offlinePreferencesRepository: OfflinePreferencesRepository? = null
+) : ViewModel() {
+    private val addSessionUseCase = AddsSessionUseCase()
+    private val tag = "TimerDebug"
 
     private val _uiState = MutableStateFlow(TimerUIState())
     val uiState: StateFlow<TimerUIState> = _uiState.asStateFlow()
@@ -32,32 +39,85 @@ class TimerViewModel() : ViewModel() {
     // Variable para el MediaPlayer
     private var mediaPlayer: MediaPlayer? = null
 
-    // Tiempo reducido para pruebas (10 segundos para enfoque)
-    private val focusTimeMillis = TimeUnit.SECONDS.toMillis(10)
-    // Tiempo reducido para pruebas (5 segundos para descanso)
-    private val breakTimeMillis = TimeUnit.SECONDS.toMillis(5)
+    // Valores por defecto (se usarán si no podemos obtener los valores guardados)
+    private var focusTimeMinutes = 25
+    private var breakTimeMinutes = 5
+    private var longBreakTimeMinutes = 10
 
-    // Inicializamos con el tiempo de prueba
+    // Tiempos calculados en milisegundos
+    private var focusTimeMillis = TimeUnit.MINUTES.toMillis(focusTimeMinutes.toLong())
+    private var breakTimeMillis = TimeUnit.MINUTES.toMillis(breakTimeMinutes.toLong())
+    private var longBreakTimeMillis = TimeUnit.MINUTES.toMillis(longBreakTimeMinutes.toLong())
+
+    // Inicializamos con el tiempo de enfoque
     private var currentTimeLeftMillis = focusTimeMillis
     private var initialTimeMillis = focusTimeMillis
 
+    // Tracking para las sesiones
+    private var sessionStartTime: Date? = null
+    private var wasInterrupted = false
+    private val interruptionReasons = mutableListOf<String>()
+
     init {
-        // Aseguramos que el formato de tiempo mostrado inicialmente sea correcto
-        _uiState.update {
-            it.copy(timeLeftFormatted = formatTime(currentTimeLeftMillis))
+        viewModelScope.launch {
+            // Cargar preferencias del usuario
+            loadUserPreferences()
+
+            // Actualizar el formato de tiempo mostrado inicialmente
+            _uiState.update {
+                it.copy(timeLeftFormatted = formatTime(currentTimeLeftMillis))
+            }
+            Log.d(tag, "ViewModel inicializado con focusTime: $focusTimeMinutes min, breakTime: $breakTimeMinutes min")
         }
-        Log.d(tag, "ViewModel inicializado")
     }
 
-    // Ya no guardaremos el contexto, cada método que lo necesite lo recibirá directamente
+    private suspend fun loadUserPreferences() {
+        try {
+            val userId = SessionManager.getUserId() ?: GlobalStorage.getUserId()
+
+            if (userId != null && offlinePreferencesRepository != null) {
+                val prefs = offlinePreferencesRepository.getByUser(userId)
+
+                if (prefs != null) {
+                    Log.d(tag, "Preferencias cargadas: ${prefs.focusTime} min focus, ${prefs.shortBreak} min break, ${prefs.longBreak} min long break")
+
+                    // Actualizar valores con los de la base de datos
+                    focusTimeMinutes = prefs.focusTime
+                    breakTimeMinutes = prefs.shortBreak
+                    longBreakTimeMinutes = prefs.longBreak
+
+                    // Convertir a milisegundos
+                    focusTimeMillis = TimeUnit.MINUTES.toMillis(focusTimeMinutes.toLong())
+                    breakTimeMillis = TimeUnit.MINUTES.toMillis(breakTimeMinutes.toLong())
+                    longBreakTimeMillis = TimeUnit.MINUTES.toMillis(longBreakTimeMinutes.toLong())
+
+                    // Reiniciar el timer con los nuevos valores
+                    currentTimeLeftMillis = focusTimeMillis
+                    initialTimeMillis = focusTimeMillis
+
+                    // Actualizar UI
+                    _uiState.update {
+                        it.copy(timeLeftFormatted = formatTime(currentTimeLeftMillis))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error cargando preferencias: ${e.message}")
+        }
+    }
+
     fun initSoundPlayer(context: Context) {
         // Este método ya no hace nada, se mantiene por compatibilidad
         Log.d(tag, "initSoundPlayer llamado, pero ya no se necesita")
     }
 
-    // Simplificado para demo UI
     fun startTimer() {
         if (timerJob == null) {
+            // Registrar tiempo de inicio de sesión
+            sessionStartTime = Date()
+            wasInterrupted = false
+            interruptionReasons.clear()
+
             timerJob = viewModelScope.launch {
                 _uiState.update {
                     it.copy(
@@ -74,8 +134,7 @@ class TimerViewModel() : ViewModel() {
                 }
 
                 if (currentTimeLeftMillis <= 0) {
-                    // Cuando termina el temporizador, notificamos pero no reproducimos aún
-                    // La reproducción se hará desde la UI pasando el contexto
+                    // Cuando termina el temporizador
                     timerCompleted()
                 }
             }
@@ -83,6 +142,12 @@ class TimerViewModel() : ViewModel() {
     }
 
     fun pauseTimer() {
+        // Marcar como interrumpido si estaba corriendo
+        if (_uiState.value.isRunning) {
+            wasInterrupted = true
+            interruptionReasons.add("User Paused")
+        }
+
         timerJob?.cancel()
         timerJob = null
         _uiState.update {
@@ -94,6 +159,13 @@ class TimerViewModel() : ViewModel() {
     }
 
     fun stopTimer() {
+        // Registrar la sesión interrumpida si estaba corriendo
+        if (_uiState.value.isRunning) {
+            wasInterrupted = true
+            interruptionReasons.add("User Stopped")
+            registerSessionIfNeeded()
+        }
+
         timerJob?.cancel()
         timerJob = null
         stopAlarmSound()
@@ -120,28 +192,34 @@ class TimerViewModel() : ViewModel() {
     }
 
     private fun timerCompleted() {
+        // Registrar la sesión completada
+        registerSessionIfNeeded()
 
         // No reproducimos aquí el sonido, lo haremos desde la UI que tiene acceso al contexto
         _uiState.update { currentState ->
             Log.d(tag, "Estado al completarse: isRunning=${currentState.isRunning}, isBreakTime=${currentState.isBreakTime}, ciclo=${currentState.currentCycle}")
 
+            // Cambiamos entre tiempo de enfoque y descanso
             val newIsBreakTime = !currentState.isBreakTime
+
+            // Incrementamos el ciclo solo cuando pasamos de descanso a enfoque
             val newCycle = if (newIsBreakTime) {
                 currentState.currentCycle
             } else {
                 currentState.currentCycle + 1
             }
 
+            // Determinar el siguiente tiempo basado en si es tiempo de enfoque o descanso
             val nextTimerDuration = if (newIsBreakTime) {
+                // Si ahora toca tiempo de descanso
                 breakTimeMillis
             } else {
+                // Si ahora toca tiempo de enfoque
                 focusTimeMillis
             }
 
-            currentTimeLeftMillis = nextTimerDuration
-            initialTimeMillis = nextTimerDuration
+            Log.d(tag, "Próximo timer: ${if (newIsBreakTime) "DESCANSO" else "ENFOQUE"} de ${TimeUnit.MILLISECONDS.toMinutes(nextTimerDuration)} minutos")
 
-            Log.d(tag, "Forzando timeLeftFormatted=00:00 y progress=0")
             // Aseguramos que el tiempo formateado sea 00:00 para que la UI lo detecte
             currentState.copy(
                 isRunning = false,
@@ -159,17 +237,74 @@ class TimerViewModel() : ViewModel() {
             delay(500)  // Delay más largo para dar tiempo
 
             // Actualizar para el siguiente ciclo
-            Log.d(tag, "Actualizando para el siguiente ciclo")
+            // IMPORTANTE: Reasignamos correctamente los tiempos para el siguiente ciclo
+            if (_uiState.value.isBreakTime) {
+                currentTimeLeftMillis = breakTimeMillis
+                initialTimeMillis = breakTimeMillis
+            } else {
+                currentTimeLeftMillis = focusTimeMillis
+                initialTimeMillis = focusTimeMillis
+            }
+
+            Log.d(tag, "Actualizando para el siguiente ciclo. Tiempo inicial: ${formatTime(currentTimeLeftMillis)}")
+
             _uiState.update { currentState ->
                 currentState.copy(
                     progress = 1f,
                     timeLeftFormatted = formatTime(currentTimeLeftMillis)
                 )
             }
+
+            // Reiniciar tracking para la próxima sesión
+            sessionStartTime = null
         }
 
         timerJob = null
         Log.d(tag, "timerCompleted() finalizado")
+    }
+
+    private fun registerSessionIfNeeded() {
+        viewModelScope.launch {
+            try {
+                // Verificar si hay un inicio de sesión registrado
+                val startTime = sessionStartTime
+                if (startTime != null) {
+                    val endTime = Date()
+                    val type = if (_uiState.value.isBreakTime) "break" else "focus"
+
+                    Log.d(tag, "Registrando sesión - Tipo: $type, Inicio: $startTime, Fin: $endTime")
+
+                    // Crear objeto de sesión con nombre de propiedad corregido
+                    val sessionRequest = SessionRequest(
+                        startTimeDate = startTime,
+                        endTimeDate = endTime,
+                        type = type,
+                        wasInterrupted = wasInterrupted,  // Nombre corregido (era wasInterrumped)
+                        interruptedBy = interruptionReasons
+                    )
+
+                    // Token de autenticación
+                    val token = "${SessionManager.getToken()}"
+
+                    // Llamar al caso de uso
+                    val result = addSessionUseCase.addSession(token, sessionRequest)
+
+                    if (result.isSuccess) {
+                        Log.d(tag, "Sesión registrada correctamente: ${result.getOrNull()}")
+                    } else {
+                        Log.e(tag, "Error al registrar sesión: ${result.exceptionOrNull()?.message}")
+                    }
+
+                    // Preparar para la siguiente sesión
+                    sessionStartTime = Date() // Iniciar la siguiente sesión inmediatamente
+                    wasInterrupted = false
+                    interruptionReasons.clear()
+                }
+            } catch (e: Exception) {
+                Log.e(tag, "Error registrando sesión: ${e.message}")
+                e.printStackTrace() // Added stack trace for better debugging
+            }
+        }
     }
 
     // Método para reproducir alarma - ahora requiere que se pase el contexto
