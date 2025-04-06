@@ -1,6 +1,12 @@
 package com.example.focuslink.view.settings.presentation
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.focuslink.components.BottomNavigationBar
 import com.example.focuslink.core.navigation.Screen
+import com.example.focuslink.core.services.FocusLinkNotificationListener
 import com.example.focuslink.ui.theme.PinkPrimary
 import com.example.focuslink.utils.PermissionRequester
 
@@ -74,6 +81,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        NotificationPermissionButton()
         // Título
         Text(
             text = "Configuración",
@@ -240,4 +248,49 @@ private fun SwitchRow(
             )
         )
     }
+}
+
+@Composable
+fun NotificationPermissionButton() {
+    val context = LocalContext.current
+
+    if (!isNotificationServiceEnabled(context)) {
+        Button(onClick = {
+            // Abre los ajustes de acceso a notificaciones
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            context.startActivity(intent)
+
+            // Después de enviar al usuario, reinicia el servicio
+            restartNotificationListenerService(context)
+        }) {
+            Text("Activar acceso a notificaciones")
+        }
+    } else {
+        Log.d("NotificationAccess", "El permiso ya está concedido")
+    }
+}
+
+
+// Función para verificar si el permiso está activo
+fun isNotificationServiceEnabled(context: Context): Boolean {
+    val pkgName = context.packageName
+    val flat = Settings.Secure.getString(
+        context.contentResolver,
+        "enabled_notification_listeners"
+    )
+    return flat?.contains(pkgName) == true
+}
+fun restartNotificationListenerService(context: Context) {
+    val componentName = ComponentName(context, FocusLinkNotificationListener::class.java)
+    val pm = context.packageManager
+    pm.setComponentEnabledSetting(
+        componentName,
+        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+        PackageManager.DONT_KILL_APP
+    )
+    pm.setComponentEnabledSetting(
+        componentName,
+        PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+        PackageManager.DONT_KILL_APP
+    )
 }

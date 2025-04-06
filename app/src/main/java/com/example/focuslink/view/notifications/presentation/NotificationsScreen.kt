@@ -29,6 +29,9 @@ fun NotificationsScreen(
 ) {
     val uiState by notificationsViewModel.uiState.collectAsState()
 
+    LaunchedEffect(true) {
+        notificationsViewModel.refreshNotifications()
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -91,74 +94,12 @@ fun NotificationsScreen(
                     .weight(1f)
             ) {
                 items(uiState.notifications) { notification ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (notification.isRead)
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    else
-                                        PinkPrimary.copy(alpha = 0.1f)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = if (notification.isRead)
-                                    MaterialTheme.colorScheme.outline
-                                else
-                                    PinkPrimary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = notification.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = if (notification.isRead) FontWeight.Normal else FontWeight.Bold
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = notification.message,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = notification.timestamp,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-
-                        if (!notification.isRead) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(PinkPrimary)
-                            )
-                        }
-                    }
-
-                    Divider(
-                        modifier = Modifier.padding(start = 64.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant
+                    NotificationItem(
+                        notification = notification,
+                        onMarkAsRead = { notificationsViewModel.markAsRead(it) }
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }

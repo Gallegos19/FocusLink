@@ -1,6 +1,7 @@
 package com.example.focuslink.core.navigation
 
 import android.content.Context
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,6 +19,7 @@ import com.example.focuslink.view.stats.presentation.StatsScreen
 import com.example.focuslink.view.stats.presentation.StatsViewModel
 import com.example.focuslink.view.notifications.presentation.NotificationsScreen
 import com.example.focuslink.view.notifications.presentation.NotificationsViewModel
+import com.example.focuslink.view.notifications.presentation.NotificationsViewModelFactory
 import com.example.focuslink.view.settings.presentation.SettingsScreen
 import com.example.focuslink.view.settings.presentation.SettingsViewModel
 import com.example.focuslink.view.settings.presentation.SettingsViewModelFactory
@@ -35,6 +37,9 @@ fun NavigationWrapper(
     // Crear ViewModel usando nuestro Factory personalizado
     val settingsViewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(context)
+    )
+    val notificationsViewModel: NotificationsViewModel = viewModel(
+        factory = NotificationsViewModelFactory(context)
     )
 
     NavHost(navController = navController, startDestination = Screen.Login.route) {
@@ -74,7 +79,7 @@ fun NavigationWrapper(
 
         composable(Screen.Notifications.route) {
             NotificationsScreen(
-                notificationsViewModel = NotificationsViewModel(),
+                notificationsViewModel = notificationsViewModel,
                 navigateToTimer = { navController.navigate(Screen.Timer.route) },
                 navigateToStats = { navController.navigate(Screen.Stats.route) },
                 navigateToSettings = { navController.navigate(Screen.Settings.route) },

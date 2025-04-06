@@ -7,8 +7,10 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.example.focuslink.core.data.SessionManager
+import com.example.focuslink.core.data.TimerStateManager
 import com.example.focuslink.core.data.local.AppContainer
 import com.example.focuslink.core.theme.ThemeManager
+import com.example.focuslink.core.utils.NotificationPermissionHandler
 import com.example.focuslink.utils.save_token.data.model.TokenDTO
 import com.example.focuslink.utils.save_token.domain.SaveTokenUseCase
 import com.google.firebase.ktx.Firebase
@@ -28,9 +30,9 @@ class MyApp : Application() {
         val saveToken = SaveTokenUseCase()
         super.onCreate()
         container = AppContainer(this)
-
+        TimerStateManager.initialize(this)
         ThemeManager.init(this)
-
+        // En onCreate() de MainActivity o en un botón específico
         println("App creada")
 
         // Crear canal de notificaciones - ¡IMPORTANTE!

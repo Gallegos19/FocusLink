@@ -34,6 +34,7 @@ fun TimerScreen(
     isDarkTheme: Boolean = isSystemInDarkTheme()
 ) {
     val context = LocalContext.current
+    val appContext = context.applicationContext
 
     // Crear ViewModel usando nuestro Factory personalizado
     val timerViewModel: TimerViewModel = viewModel(
@@ -183,9 +184,9 @@ fun TimerScreenContent(
             FloatingActionButton(
                 onClick = {
                     if (uiState.isRunning) {
-                        timerViewModel.pauseTimer()
+                        timerViewModel.pauseTimer(appContext)
                     } else {
-                        timerViewModel.startTimer()
+                        timerViewModel.startTimer(appContext)
                     }
                 },
                 containerColor = if (uiState.isRunning) MaterialTheme.colorScheme.secondary else PinkPrimary
@@ -199,7 +200,7 @@ fun TimerScreenContent(
             // Botón de stop
             if (uiState.isRunning || uiState.isPaused) {
                 FloatingActionButton(
-                    onClick = { timerViewModel.stopTimer() },
+                    onClick = { timerViewModel.stopTimer(appContext) },
                     containerColor = MaterialTheme.colorScheme.error
                 ) {
                     Icon(
