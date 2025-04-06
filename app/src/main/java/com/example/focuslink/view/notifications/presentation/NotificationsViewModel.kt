@@ -2,57 +2,41 @@ package com.example.focuslink.view.notifications.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.focuslink.view.notifications.data.model.NotificationEntity
 import com.example.focuslink.view.notifications.domain.NotificationUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+
 
 class NotificationsViewModel(
-    private val notificationUseCase: NotificationUseCase = NotificationUseCase()
+    private val notificationUseCase: NotificationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotificationsUIState())
     val uiState: StateFlow<NotificationsUIState> = _uiState.asStateFlow()
 
     init {
-        loadNotifications()
+        observeUnreadNotifications()
     }
 
-    private fun loadNotifications() {
+    private fun observeUnreadNotifications() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-
-            try {
-                val result = notificationUseCase.getNotifications()
-
-                if (result.isSuccess) {
-                    val notifications = result.getOrNull()
+            notificationUseCase.getNotifications()
+                .collect { unreadNotifications ->
                     _uiState.update {
                         it.copy(
-                            notifications = notifications ?: emptyList(),
-                            isLoading = false
-                        )
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            errorMessage = result.exceptionOrNull()?.message ?: "Error al cargar notificaciones",
+                            notifications = unreadNotifications,
                             isLoading = false
                         )
                     }
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        errorMessage = e.message ?: "Error desconocido",
-                        isLoading = false
-                    )
-                }
-            }
         }
     }
+
 
     fun markAsRead(notificationId: String) {
         viewModelScope.launch {
@@ -60,7 +44,6 @@ class NotificationsViewModel(
                 val result = notificationUseCase.markAsRead(notificationId)
 
                 if (result.isSuccess) {
-                    // Actualizar la notificación en la UI
                     _uiState.update { currentState ->
                         val updatedNotifications = currentState.notifications.map { notification ->
                             if (notification.id == notificationId) {
@@ -71,6 +54,7 @@ class NotificationsViewModel(
                         }
 
                         currentState.copy(notifications = updatedNotifications)
+
                     }
                 }
             } catch (e: Exception) {
@@ -82,6 +66,6 @@ class NotificationsViewModel(
     }
 
     fun refreshNotifications() {
-        loadNotifications()
+        observeUnreadNotifications()
     }
 }

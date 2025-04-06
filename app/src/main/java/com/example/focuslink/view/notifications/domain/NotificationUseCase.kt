@@ -1,102 +1,58 @@
 package com.example.focuslink.view.notifications.domain
 
+import android.util.Log
+import com.example.focuslink.core.data.local.AppContainer
 import com.example.focuslink.view.notifications.data.model.NotificationEntity
-import java.util.*
+import kotlinx.coroutines.flow.first
+import android.content.Context
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onEach
 
-class NotificationUseCase(
-    private val notificationRepository: NotificationRepository? = null
-) {
-    // Datos mock para la UI
-    private val mockNotifications = listOf(
-        NotificationEntity(
-            id = "1",
-            title = "Sesión completada",
-            message = "Has completado 2 horas de enfoque. ¡Buen trabajo!",
-            timestamp = "Hace 1 hora",
-            isRead = false,
-            createdAt = System.currentTimeMillis()
-        ),
-        NotificationEntity(
-            id = "2",
-            title = "¡Nueva racha!",
-            message = "Has mantenido tu racha por 3 días consecutivos",
-            timestamp = "Hace 5 horas",
-            isRead = true,
-            createdAt = System.currentTimeMillis() - 18000000
-        ),
-        NotificationEntity(
-            id = "3",
-            title = "Recordatorio",
-            message = "Recuerda programar tu sesión de enfoque para hoy",
-            timestamp = "Ayer",
-            isRead = false,
-            createdAt = System.currentTimeMillis() - 86400000
-        )
-    )
+class NotificationUseCase(context: Context) {
+    private val tag = "NotificationUseCase"
+    private val notificationRepository = AppContainer(context).notificationRepository
 
-    suspend fun getNotifications(): Result<List<NotificationEntity>> {
-        // Para demo, devolvemos datos mock
-        return Result.success(mockNotifications)
-
-        // En una implementación real:
-        /*
-        return try {
-            if (notificationRepository == null) {
-                return Result.failure(IllegalStateException("Repository not initialized"))
+    /**
+     * Obtiene todas las notificaciones guardadas
+     */
+    suspend fun getNotifications(): Flow<List<NotificationEntity>> {
+        return notificationRepository.getUnreadNotifications()
+            .onEach {
+                Log.d(tag, "Notificaciones NO LEÍDAS: ${it.size}")
             }
-
-            val notifications = notificationRepository.getAllNotifications().first()
-            Result.success(notifications)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-        */
+            .catch { e ->
+                Log.e(tag, "Error al obtener notificaciones no leídas: ${e.message}")
+                emit(emptyList())
+            }
     }
 
-    suspend fun markAsRead(notificationId: String): Result<Unit> {
-        // Para demo, retornamos éxito
-        return Result.success(Unit)
 
-        // En una implementación real:
-        /*
+    /**
+     * Marca una notificación como leída
+     */
+    suspend fun markAsRead(notificationId: String): Result<Boolean> {
         return try {
-            if (notificationRepository == null) {
-                return Result.failure(IllegalStateException("Repository not initialized"))
-            }
-
             notificationRepository.markAsRead(notificationId)
-            Result.success(Unit)
+            Log.d(tag, "Notificación marcada como leída: $notificationId")
+            Result.success(true)
         } catch (e: Exception) {
+            Log.e(tag, "Error marcando notificación como leída: ${e.message}")
             Result.failure(e)
         }
-        */
     }
 
-    suspend fun addNotification(title: String, message: String): Result<Unit> {
-        // Para demo, retornamos éxito
-        return Result.success(Unit)
-
-        // En una implementación real:
-        /*
+    /**
+     * Elimina todas las notificaciones
+     */
+    suspend fun clearAllNotifications(): Result<Boolean> {
         return try {
-            if (notificationRepository == null) {
-                return Result.failure(IllegalStateException("Repository not initialized"))
-            }
-
-            val notification = NotificationEntity(
-                id = UUID.randomUUID().toString(),
-                title = title,
-                message = message,
-                timestamp = "Ahora",
-                isRead = false,
-                createdAt = System.currentTimeMillis()
-            )
-
-            notificationRepository.insertNotification(notification)
-            Result.success(Unit)
+            notificationRepository.deleteAllNotifications()
+            Log.d(tag, "Todas las notificaciones eliminadas")
+            Result.success(true)
         } catch (e: Exception) {
+            Log.e(tag, "Error eliminando notificaciones: ${e.message}")
             Result.failure(e)
         }
-        */
     }
 }

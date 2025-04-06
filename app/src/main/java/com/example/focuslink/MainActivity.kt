@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         GlobalStorage.init(this)
         SessionManager.init(this)
+
         setContent {
             val isDarkTheme by ThemeManager.isDarkTheme.collectAsState()
 

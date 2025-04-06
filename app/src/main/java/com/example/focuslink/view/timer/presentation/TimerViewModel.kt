@@ -24,6 +24,8 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import android.util.Log
 import java.util.Date
+import com.example.focuslink.core.data.TimerStateManager
+
 
 class TimerViewModel(
     private val offlinePreferencesRepository: OfflinePreferencesRepository? = null
@@ -111,7 +113,7 @@ class TimerViewModel(
         Log.d(tag, "initSoundPlayer llamado, pero ya no se necesita")
     }
 
-    fun startTimer() {
+    fun startTimer(context: Context) {
         if (timerJob == null) {
             // Registrar tiempo de inicio de sesión
             sessionStartTime = Date()
@@ -126,6 +128,10 @@ class TimerViewModel(
                     )
                 }
 
+                // Actualizar el estado global del timer
+                TimerStateManager.setTimerRunning(context,true)
+                Log.d(tag, "Timer iniciado - Notificando al sistema")
+
                 // Simulación de timer para la UI
                 while (currentTimeLeftMillis > 0 && _uiState.value.isRunning) {
                     delay(100) // Actualizar cada 100ms para progreso suave
@@ -135,17 +141,22 @@ class TimerViewModel(
 
                 if (currentTimeLeftMillis <= 0) {
                     // Cuando termina el temporizador
-                    timerCompleted()
+                    timerCompleted(context)  // Pasando el contexto aquí
                 }
             }
         }
     }
 
-    fun pauseTimer() {
+    // Actualizar pauseTimer() para manejar el estado global
+    fun pauseTimer(context: Context) {
         // Marcar como interrumpido si estaba corriendo
         if (_uiState.value.isRunning) {
             wasInterrupted = true
             interruptionReasons.add("User Paused")
+
+            // Actualizar estado global
+            TimerStateManager.setTimerRunning(context, false)
+            Log.d(tag, "Timer pausado - Notificando al sistema")
         }
 
         timerJob?.cancel()
@@ -158,12 +169,17 @@ class TimerViewModel(
         }
     }
 
-    fun stopTimer() {
+    // Actualizar stopTimer() para manejar el estado global
+    fun stopTimer(context: Context) {
         // Registrar la sesión interrumpida si estaba corriendo
         if (_uiState.value.isRunning) {
             wasInterrupted = true
             interruptionReasons.add("User Stopped")
             registerSessionIfNeeded()
+
+            // Actualizar estado global
+            TimerStateManager.setTimerRunning(context,false)
+            Log.d(tag, "Timer detenido - Notificando al sistema")
         }
 
         timerJob?.cancel()
@@ -191,9 +207,11 @@ class TimerViewModel(
         }
     }
 
-    private fun timerCompleted() {
+    private fun timerCompleted(context: Context) {  // Añadido el parámetro de contexto
         // Registrar la sesión completada
         registerSessionIfNeeded()
+        TimerStateManager.setTimerRunning(context, false)  // Usando el contexto pasado como parámetro
+
 
         // No reproducimos aquí el sonido, lo haremos desde la UI que tiene acceso al contexto
         _uiState.update { currentState ->

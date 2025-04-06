@@ -219,14 +219,18 @@ class SettingsViewModel(
         savePreferences()
     }
 
-    fun toggleDarkMode(enabled: Boolean) {
-        // Solo actualizamos el ThemeManager
-        ThemeManager.setDarkTheme(enabled)
+    fun toggleDarkMode(isDark: Boolean) {
+        _uiState.update { it.copy(darkModeEnabled = isDark) }
 
-        // El estado local se actualizará automáticamente a través de la recolección
-        // Los valores para guardar en preferencias también vendrán del ThemeManager
-        savePreferences()
+        viewModelScope.launch {
+            val userId = SessionManager.getUserId() ?: GlobalStorage.getUserId()
+            if (userId != null) {
+                savePreferences()
+                ThemeManager.setDarkTheme(isDark) // <- Esto es lo que activa el cambio visual
+            }
+        }
     }
+
 
     private fun savePreferences() {
         viewModelScope.launch {

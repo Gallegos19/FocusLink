@@ -3,17 +3,28 @@ package com.example.focuslink.core.data
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.firebase.messaging.FirebaseMessaging
+import android.util.Log
 
 object SessionManager {
+
     private const val PREFS_NAME = "app_prefs"
     private const val TOKEN_KEY = "TOKEN"
     private const val USER_ID_KEY = "USER_ID"
     private const val FCM_TOKEN_KEY = "FCM_TOKEN"
 
-    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var applicationContext: Context
+
+    // Usando inicialización perezosa para asegurar que sharedPreferences siempre esté inicializado antes de usarse
+    private val sharedPreferences: SharedPreferences by lazy {
+        if (::applicationContext.isInitialized) {
+            applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        } else {
+            throw IllegalStateException("SessionManager no ha sido inicializado. Llama a init(context) antes de usar cualquier método.")
+        }
+    }
 
     fun init(context: Context) {
-        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        applicationContext = context.applicationContext // Usar applicationContext para prevenir memory leaks
     }
 
     // Guardar token de sesión
@@ -52,10 +63,10 @@ object SessionManager {
     }
 
     // Verifica si el token de FCM ha cambiado y lo envía al backend si es necesario
-    fun updateFCMTokenIfNeeded(context: Context, sendTokenToBackend: (String) -> Unit) {
+    fun updateFCMTokenIfNeeded(sendTokenToBackend: (String) -> Unit) {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
-                println("Error al obtener el token FCM")
+                Log.e("SessionManager", "Error al obtener el token FCM", task.exception)
                 return@addOnCompleteListener
             }
 
